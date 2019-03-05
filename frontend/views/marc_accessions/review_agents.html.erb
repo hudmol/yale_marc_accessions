@@ -1,0 +1,74 @@
+<%
+relator_enum = JSONModel(:accession).schema['properties']['linked_agents']['items']['properties']['relator']['dynamic_enum']
+relator_options = JSONModel.enum_values(relator_enum).map {|enum| [I18n.t("enumerations.#{relator_enum}.#{enum}", enum),
+                                                                   enum]}
+%>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="record-pane">
+            <h2><%= I18n.t('marc_accession.import_title') %></h2>
+
+            <%= form_tag({:controller => :marc_accessions, :action => :create}) do %>
+                <% form_context('linked_agents') do |form| %>
+                    <%= hidden_field('stored_accession_uuid', nil, :value => @stored_accession_uuid) %>
+
+                    <p>The following agents were extracted from the imported MARC record.</p>
+
+                    <table class="table table-bordered table-striped">
+                        <tr>
+                            <th>Agent type</th>
+                            <th>Agent role</th>
+                            <th>Agent relator</th>
+                            <th>Primary part of name</th>
+                            <th>Rest of name</th>
+                            <th></th>
+                        </tr>
+
+                        <% @agents.each_with_index do |agent, idx| %>
+                            <%
+                            if agent[:matched_existing_agent]
+                                existing_agent =  {
+                                    'ref' => agent[:matched_existing_agent]['ref'],
+                                    '_resolved' => {'jsonmodel_type' => agent[:agent_type],
+                                                    'uri' => agent[:matched_existing_agent]['ref'],
+                                                    'display_string' => agent[:matched_existing_agent]['display_string']}
+                                }
+                            end
+                            %>
+                            <tr>
+                                <td><%= agent[:agent_type] %></td>
+                                <td>
+                                    <%= hidden_field("linked_agents[role]", nil, :value => agent[:role], :id => "role_#{idx}") %>
+                                    <%= agent[:role] %>
+                                </td>
+                                <td><%= form.select('relator[]', [""] + relator_options, :default => agent[:relator]) %></td>
+                                <td><%= agent[:agent]['names'][0]['primary_name'] %></td>
+                                <td><%= agent[:agent]['names'][0]['rest_of_name'] %></td>
+                                <td>
+                                    <% form.push('agent[]', (existing_agent || {})) do |form| %>
+                                        <%= render_aspace_partial :partial => "agent_linker", :locals => {:form => form, :stored_accession_uuid => @stored_accession_uuid, :stored_agent_idx => idx, :multiplicity => 'one', :allowed_types => [agent[:agent_type]], :optional => true} %>
+                                    <% end %>
+                                </td>
+                            </tr>
+                        <% end %>
+                    </table>
+                    <div class="form-group">
+                        <div class="form-actions">
+                            <div class="btn-group">
+                                <button class="btn btn-primary"><%= I18n.t("marc_accession.import_marc_record") %></button>
+                            </div>
+                        </div>
+                    </div>
+                <% end %>
+            <% end %>
+        </div>
+    </div>
+</div>
+
+<%= javascript_include_tag("linker") %>
+<script>
+ $(function () {
+     $(".linker:not(.initialised)").linker();
+ });
+</script>

@@ -1,0 +1,6 @@
+<script>
+$(function () {
+     var marcAccessionItem = $('<li><a href="/marc_accessions/new">Accession from MARC</a></li>');
+     $('.dropdown.create-container a:contains("Accession")').first().closest('li').after(marcAccessionItem);
+ });
+</script>
