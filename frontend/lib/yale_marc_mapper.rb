@@ -66,6 +66,7 @@ class YaleMarcMapper
           'names' => [
             {
               'jsonmodel_type' => 'name_person',
+              'authorized' => true,
               'name_order' => name_order,
               'primary_name' => primary_name,
               'rest_of_name' => rest_of_name,
@@ -74,7 +75,8 @@ class YaleMarcMapper
               'fuller_form' => trim_text(datafield.css('subfield[code="q"]').text),
             }
           ],
-          'dates_of_existence' => [string_to_date(trim_text(datafield.css('subfield[code="d"]').text))].compact,
+          'dates_of_existence' => [string_to_date(trim_text(datafield.css('subfield[code="d"]').text),
+                                                 'date_type' => 'range')].compact,
         }
       }
     end
@@ -88,6 +90,7 @@ class YaleMarcMapper
           'names' => [
             {
               'jsonmodel_type' => 'name_corporate_entity',
+              'authorized' => true,
               'primary_name' => trim_text(datafield.css('subfield[code="a"]').text),
               'subordinate_name_1' => trim_text(datafield.css('subfield[code="b"]').first_or_empty.text),
               'subordinate_name_2' => trim_text(datafield.css('subfield[code="b"]').drop(1).map(&:text).join(' ')),
@@ -95,7 +98,8 @@ class YaleMarcMapper
               'number' => trim_text(datafield.css('subfield[code="n"]').text),
             }
           ],
-          'dates_of_existence' => [string_to_date(trim_text(datafield.css('subfield[code="d"]').text))].compact,
+          'dates_of_existence' => [string_to_date(trim_text(datafield.css('subfield[code="d"]').text),
+                                                  'date_type' => 'range')].compact,
         }
       }
     end
@@ -109,6 +113,7 @@ class YaleMarcMapper
           'names' => [
             {
               'jsonmodel_type' => 'name_corporate_entity',
+              'authorized' => true,
               'primary_name' => trim_text(datafield.css('subfield[code="a"]').text),
               'subordinate_name_1' => [datafield.css('subfield[code="e"]').first_or_empty.text, datafield.css('subfield[code="q"]').first_or_empty.text].reject(&:empty?).join(' '),
               'subordinate_name_2' => trim_text((datafield.css('subfield[code="e"]').drop(1).map(&:text) +
@@ -118,7 +123,8 @@ class YaleMarcMapper
               'number' => trim_text(datafield.css('subfield[code="n"]').text),
             }
           ],
-          'dates_of_existence' => [string_to_date(trim_text(datafield.css('subfield[code="d"]').text))].compact,
+          'dates_of_existence' => [string_to_date(trim_text(datafield.css('subfield[code="d"]').text),
+                                                  'date_type' => 'range')].compact,
         }
       }
     end
@@ -133,6 +139,7 @@ class YaleMarcMapper
               'names' => [
                 {
                   'jsonmodel_type' => 'name_corporate_entity',
+                  'authorized' => true,
                   'primary_name' => name,
                 }
               ],
@@ -229,7 +236,7 @@ class YaleMarcMapper
       'begin' => begin_date,
       'end' => end_date,
       'expression' => s,
-    }.merge(extra_fields)
+    }.merge(extra_fields.reject {|k, v| v.to_s.empty?})
   end
 
   # TODO: Haven't yet found a MARC record containing dates.  Got an example?
