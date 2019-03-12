@@ -1,0 +1,8 @@
+en:
+  marc_accession:
+    import_title: Import Accession from MARC record
+    bibid_label: Select a Bib ID to import
+    bibid_placeholder: "Bib ID (e.g. 12345)"
+    import_marc_record: Import MARC
+    agent_listing_text: "The following agents were extracted from the MARC record you selected.  Please nominate which agents to link to your new accession by creating a new, or linking to an existing agent."
+    linked_to_aspace_agent: "Linked to ArchivesSpace Record"

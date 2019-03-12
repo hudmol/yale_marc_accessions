@@ -13,16 +13,16 @@ relator_options = JSONModel.enum_values(relator_enum).map {|enum| [I18n.t("enume
                 <% form_context('linked_agents') do |form| %>
                     <%= hidden_field('stored_accession_uuid', nil, :value => @stored_accession_uuid) %>
 
-                    <p>The following agents were extracted from the imported MARC record.</p>
+                    <p><%= I18n.t('marc_accession.agent_listing_text') %></p>
 
                     <table class="table table-bordered table-striped">
                         <tr>
-                            <th>Agent type</th>
-                            <th>Agent role</th>
-                            <th>Agent relator</th>
-                            <th>Primary part of name</th>
-                            <th>Rest of name</th>
-                            <th></th>
+                            <th><%= I18n.t('agent.type') %></th>
+                            <th><%= I18n.t('linked_agent.role') %></th>
+                            <th><%= I18n.t('linked_agent.relator') %></th>
+                            <th><%= I18n.t('agent_name.primary_name') %></th>
+                            <th><%= I18n.t('agent_name.rest_of_name') %></th>
+                            <th><%= I18n.t('marc_accession.linked_to_aspace_agent') %></th>
                         </tr>
 
                         <% @agents.each_with_index do |agent, idx| %>
@@ -37,7 +37,7 @@ relator_options = JSONModel.enum_values(relator_enum).map {|enum| [I18n.t("enume
                             end
                             %>
                             <tr>
-                                <td><%= agent[:agent_type] %></td>
+                                <td><%= I18n.t('agent.agent_type.' + agent[:agent_type]) %></td>
                                 <td>
                                     <%= hidden_field("linked_agents[role]", nil, :value => agent[:role], :id => "role_#{idx}") %>
                                     <%= agent[:role] %>

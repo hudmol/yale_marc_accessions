@@ -6,7 +6,7 @@
             <%= form_tag({:controller => :marc_accessions, :action => :review_agents}, :method => :get) do |form| %>
                 <div class="form-group">
                     <div class="input-group">
-                        <label for="bibid"><%= I18n.t('marc_accession.bibid_placeholder') %></label>
+                        <label for="bibid"><%= I18n.t('marc_accession.bibid_label') %></label>
                         <input id="bibid"  name="bibid" class="form-control" type="text" placeholder="<%= I18n.t('marc_accession.bibid_placeholder') %>">
                     </div>
                 </div>
