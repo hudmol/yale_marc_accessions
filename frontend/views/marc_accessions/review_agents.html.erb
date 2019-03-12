@@ -66,6 +66,7 @@ relator_options = JSONModel.enum_values(relator_enum).map {|enum| [I18n.t("enume
     </div>
 </div>
 
+<%= javascript_include_tag("agents.crud") %>
 <%= javascript_include_tag("linker") %>
 <script>
  $(function () {
