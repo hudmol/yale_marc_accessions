@@ -35,8 +35,13 @@ relator_options = JSONModel.enum_values(relator_enum).map {|enum| [I18n.t("enume
                                                     'display_string' => agent[:matched_existing_agent]['display_string']}
                                 }
                             end
+
+                            agent_name = [
+                              agent[:agent]['names'][0]['primary_name'],
+                              agent[:agent]['names'][0]['rest_of_name']
+                            ].compact.join(' ')
                             %>
-                            <tr>
+                            <tr class="agent-row" data-agent-name="<%= agent_name %>" data-agent-idx="<%= idx %>">
                                 <td><%= I18n.t('agent.agent_type.' + agent[:agent_type]) %></td>
                                 <td>
                                     <%= hidden_field("linked_agents[role]", nil, :value => agent[:role], :id => "role_#{idx}") %>
@@ -68,8 +73,94 @@ relator_options = JSONModel.enum_values(relator_enum).map {|enum| [I18n.t("enume
 
 <%= javascript_include_tag("agents.crud") %>
 <%= javascript_include_tag("linker") %>
+
+<div id="lcnaf_choose_id_template" style="display: none">
+    <form class='lcnaf-import-form'>
+        <input type="hidden" name="agent-idx" value="${idx}">
+        <div class="modal-body">
+            <p>To import an agent from LCNAF, search the database and then enter its LCNAF identifier or record URL below.</p>
+
+            <div class="form-group">
+                <a class="btn btn-default" href="<%= LCNAFClient::SEARCH_URI_JS_TEMPLATE %>" target="_blank">Search LCNAF <i class="glyphicon glyphicon-new-window"></i></a>
+            </div>
+
+            <hr>
+
+            <div class="form-group">
+                <div class="row">
+                    <div class="form-group lcnaf-identifier">
+                        <label class="col-sm-2 control-label" for="lcnaf_identifier">LCNAF Identifier</label>
+                        <div class="col-sm-9">
+                            <input class="form-control"
+                                   required
+                                   type="text"
+                                   id="lcnaf_identifier"
+                                   name="lcnaf_identifier"
+                                   placeholder="LCNAF Identifier/URL (examples: n79135509; http://id.loc.gov/authorities/names/n79135509.html)">
+                            <p class="help-block not-found-error" style="display: none;">Could not find an LCNAF record with that identifier</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary">Import</button>
+            <button class="btn btn-cancel btn-default" data-dismiss="modal">Cancel</button>
+        </div>
+    </form>
+</div>
+
+
 <script>
  $(function () {
+     $(document).on('click', '.agent-lcnaf-btn', function (e) {
+         var $row = $(e.target).closest('tr.agent-row');
+         var agent_name = $row.data('agent-name');
+         var agent_idx = $row.data('agent-idx');
+
+         AS.openCustomModal('LCNAFImport',
+                            'Import an agent from LCNAF',
+                            AS.renderTemplate("lcnaf_choose_id_template", {
+                                query: encodeURIComponent(agent_name),
+                                idx: agent_idx,
+                            }),
+                            'large',
+                            {},
+                            this);
+
+         return true;
+     });
+
+     $(document).on('submit', '.lcnaf-import-form', function (e) {
+         e.preventDefault();
+
+         var self = this;
+         var lcnaf_id = $(this).find('#lcnaf_identifier').val();
+         var agent_idx = $(this).find('input[name=agent-idx]').val();
+
+         $.ajax({
+             url: AS.app_prefix('marc_accessions/lcnaf_import'),
+             method: 'POST',
+             data: {
+                 lcnaf_id: lcnaf_id,
+                 stored_accession_uuid: '<%= @stored_accession_uuid %>',
+                 agent_idx: agent_idx,
+             },
+             success: function () {
+                 // Close the modal and jump back to the now-populated agent creation form.
+                 $(self).find('.btn-cancel').trigger('click');
+                 setTimeout(function () {
+                     $('tr[data-agent-idx=' + agent_idx + '] .linker-create-new-agent').click();
+                 });
+             },
+             error: function (xhr, status, errorThrown) {
+                 $(self).find('.form-group.lcnaf-identifier').addClass('has-error')
+                 $(self).find('.not-found-error').show();
+             }
+         });
+
+     });
+
      $(".linker:not(.initialised)").linker();
  });
 </script>

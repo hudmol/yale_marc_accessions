@@ -1,7 +1,9 @@
 # coding: utf-8
 class MarcAccessionsController < ApplicationController
 
-  set_access_control "update_accession_record" => [:new, :create, :review_agents]
+  set_access_control "update_accession_record" => [:new, :create, :review_agents],
+                     "update_agent_record" => [:lcnaf_import]
+
 
   before_action :marc_accessions_reload_mapper_for_dev
 
@@ -29,7 +31,7 @@ class MarcAccessionsController < ApplicationController
     end
 
     # Otherwise, look for agents that have already been created
-    post_uri = URI("#{JSONModel::HTTP.backend_url}/repositories/#{session[:repo_id]}/marc_accessions/find-similar-agents")
+    post_uri = URI("#{JSONModel::HTTP.backend_url}/repositories/#{session[:repo_id]}/marc_accessions_similar_agents")
     matched_agents = [nil] * @agents.length
 
     begin
@@ -41,15 +43,9 @@ class MarcAccessionsController < ApplicationController
     (0...@agents.length).each do |idx|
       @agents[idx][:matched_existing_agent] = matched_agents[idx]
     end
-
-    # @agents
-    require 'pp';$stderr.puts("\n*** DEBUG #{(Time.now.to_f * 1000).to_i} [marc_accessions_controller.rb:45 a115c8]: " + {%Q^@agents^ => @agents}.pretty_inspect + "\n")
   end
 
   def create
-    # params
-    require 'pp';$stderr.puts("\n*** DEBUG #{(Time.now.to_f * 1000).to_i} [marc_accessions_controller.rb:51 9433b]: " + {%Q^params^ => params}.pretty_inspect + "\n")
-
     marc_accession = JSONModel(:marc_accession).find(nil, :uuid => params[:stored_accession_uuid])
 
     roles = (params['linked_agents'] || {}).fetch('role')
@@ -85,4 +81,35 @@ class MarcAccessionsController < ApplicationController
     end
   end
 
+  def lcnaf_import
+    params.require([:lcnaf_id, :stored_accession_uuid, :agent_idx])
+
+    lcnaf = LCNAFClient.new
+
+    lcnaf_id = lcnaf.extract_identifier(params[:lcnaf_id])
+
+    # ERROR: Could fail with 404
+    marc = lcnaf.fetch_marcxml(lcnaf_id)
+    mapper = YaleMarcMapper.for_marc(marc)
+
+    marc_accession = JSONModel(:marc_accession).find(nil, :uuid => params[:stored_accession_uuid])
+
+    if mapper.agents.empty?
+      # ERROR: no agent found
+      raise "NO_AGENT_FOUND"
+    else
+      marc_accession.json['agents'][Integer(params[:agent_idx])]['agent'].merge!(mapper.agents[0][:agent])
+    end
+
+    # marc_accession
+    require 'pp';$stderr.puts("\n*** DEBUG #{(Time.now.to_f * 1000).to_i} [marc_accessions_controller.rb:105 143150]: " + {%Q^marc_accession^ => marc_accession}.pretty_inspect + "\n")
+
+    # This record type doesn't have a proper ID, so the usual #save method
+    # doesn't work.  Just send a POST to the right URL.
+    JSONModel::HTTP.post_json(JSONModel(:marc_accession).my_url(params[:stored_accession_uuid], {}),
+                              marc_accession.to_json)
+  end
+
 end
+
+

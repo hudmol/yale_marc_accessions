@@ -39,6 +39,7 @@ class YaleMarcMapper
 
   def initialize(marcxml)
     @doc = Nokogiri::XML(marcxml)
+    @doc.remove_namespaces!
 
     @agents = extract_agents
   end

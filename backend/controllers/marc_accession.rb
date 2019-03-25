@@ -36,8 +36,22 @@ class ArchivesSpaceService < Sinatra::Base
     json_response({'uuid' => uuid}, 200)
   end
 
+  Endpoint.post('/repositories/:repo_id/marc_accessions/:uuid')
+    .description("Save a work in progress MARC accession")
+    .params(["repo_id", :repo_id],
+            ["uuid", String, "The MARC Accession record to update"],
+            ["marc_accession", JSONModel(:marc_accession), "A JSON record to save", :body => true])
+    .permissions([:update_accession_record])
+    .returns([200, "{'uuid': 'someuuid'}"]) \
+  do
+    marc_accession = MARCAccessionRecord[:uuid => params[:uuid]] or raise NotFoundException.new
+    marc_accession.json = params[:marc_accession].json.to_json
+    marc_accession.save
 
-  Endpoint.post('/repositories/:repo_id/marc_accessions/find-similar-agents')
+    json_response({'uuid' => params[:uuid]}, 200)
+  end
+
+  Endpoint.post('/repositories/:repo_id/marc_accessions_similar_agents')
     .description("Given a set of agents, return any that are close enough for a match")
     .params(["repo_id", :repo_id],
             ["agents", String, "A JSON array of agents", :body => true])
