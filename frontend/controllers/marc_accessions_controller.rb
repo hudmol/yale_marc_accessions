@@ -88,21 +88,16 @@ class MarcAccessionsController < ApplicationController
 
     lcnaf_id = lcnaf.extract_identifier(params[:lcnaf_id])
 
-    # ERROR: Could fail with 404
     marc = lcnaf.fetch_marcxml(lcnaf_id)
     mapper = YaleMarcMapper.for_marc(marc)
 
     marc_accession = JSONModel(:marc_accession).find(nil, :uuid => params[:stored_accession_uuid])
 
     if mapper.agents.empty?
-      # ERROR: no agent found
       raise "NO_AGENT_FOUND"
     else
       marc_accession.json['agents'][Integer(params[:agent_idx])]['agent'].merge!(mapper.agents[0][:agent])
     end
-
-    # marc_accession
-    require 'pp';$stderr.puts("\n*** DEBUG #{(Time.now.to_f * 1000).to_i} [marc_accessions_controller.rb:105 143150]: " + {%Q^marc_accession^ => marc_accession}.pretty_inspect + "\n")
 
     # This record type doesn't have a proper ID, so the usual #save method
     # doesn't work.  Just send a POST to the right URL.
